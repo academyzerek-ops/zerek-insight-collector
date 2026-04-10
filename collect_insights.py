@@ -23,8 +23,8 @@ OUTPUT_DIR      = Path(os.environ.get("OUTPUT_DIR", "./output"))
 CONFIG_PATH     = Path(__file__).parent / "niche_queries.json"
 
 TARGET_VIDEOS   = 7        # берём до 7
-MIN_VIDEOS      = 3        # минимум 3
-MIN_DUR         = 480      # 8 мин
+MIN_VIDEOS      = 1        # минимум 1 (было 3)
+MIN_DUR         = 180      # 3 мин (было 8)
 MAX_AGE_YEARS   = 5
 LANG            = "ru"
 GEMINI_MODEL    = "gemini-2.5-flash"
@@ -224,10 +224,12 @@ def process_niche(niche_id: str, config: dict) -> dict:
 
     log.info("1/4 Поиск")
     vids = search(niche["queries"])
+    log.info(f"  Найдено видео: {len(vids)}")
     if not vids: return {"status": "error", "niche": niche_id, "msg": "нет видео"}
 
     log.info("2/4 Фильтрация")
     good = filt(vids)
+    log.info(f"  После фильтра: {len(good)}")
     if not good: return {"status": "error", "niche": niche_id, "msg": "нет подходящих"}
 
     log.info("3/4 Транскрипты")
