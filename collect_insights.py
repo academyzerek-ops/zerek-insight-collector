@@ -156,16 +156,22 @@ def transcripts(videos: list[dict]) -> list[dict]:
     out = []
     for v in videos:
         log.info(f"  📝 {v['title'][:55]}...")
-        try:
-            t = ytt.fetch(v["video_id"], languages=["ru"])
-            txt = " ".join(s.text for s in t.snippets)
-            w = len(txt.split())
-            if w < 500:
-                log.info(f"     ✗ {w} слов (мало)"); continue
-            out.append({**v, "transcript": txt, "words": w})
-            log.info(f"     ✓ {w} слов")
-        except:
-            log.info(f"     ✗ нет ru субтитров"); continue
+        txt = None
+        # Try multiple language codes
+        for langs in [["ru"], ["ru", "a.ru", "ru-RU"], ["en", "a.en"]]:
+            try:
+                t = ytt.fetch(v["video_id"], languages=langs)
+                txt = " ".join(s.text for s in t.snippets)
+                break
+            except:
+                continue
+        if not txt:
+            log.info(f"     ✗ нет субтитров"); continue
+        w = len(txt.split())
+        if w < 500:
+            log.info(f"     ✗ {w} слов (мало)"); continue
+        out.append({**v, "transcript": txt, "words": w})
+        log.info(f"     ✓ {w} слов")
         time.sleep(0.2)
     log.info(f"  Итого транскриптов: {len(out)}")
     return out
