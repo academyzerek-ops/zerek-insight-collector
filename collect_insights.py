@@ -236,7 +236,12 @@ def process_niche(niche_id: str, config: dict) -> dict:
     ts = transcripts(good)
     if len(ts) < MIN_VIDEOS:
         log.warning(f"  ⚠ Мало: {len(ts)}/{MIN_VIDEOS}")
-        if not ts: return {"status": "error", "niche": niche_id, "msg": "нет транскриптов"}
+        if not ts:
+            titles = [v.get("title","?")[:60] for v in good[:5]]
+            return {"status": "error", "niche": niche_id,
+                    "msg": "нет транскриптов",
+                    "found_videos": len(vids), "filtered": len(good),
+                    "sample_titles": titles}
 
     log.info("4/4 Суммаризация")
     text = summarize(ts, name)
