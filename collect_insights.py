@@ -157,14 +157,29 @@ def transcripts(videos: list[dict]) -> list[dict]:
     for v in videos:
         log.info(f"  📝 {v['title'][:55]}...")
         txt = None
-        # Try multiple language codes
-        for langs in [["ru"], ["ru", "a.ru", "ru-RU"], ["en", "a.en"]]:
+        # Try fetching with multiple language preferences
+        for langs in [["ru"], ["ru", "a.ru", "ru-RU"], ["en", "a.en", "en-US"]]:
             try:
                 t = ytt.fetch(v["video_id"], languages=langs)
                 txt = " ".join(s.text for s in t.snippets)
                 break
-            except:
+            except Exception as e:
+                log.info(f"     … {langs[0]}: {type(e).__name__}: {str(e)[:80]}")
                 continue
+        # Fallback: list all available transcripts and take any
+        if not txt:
+            try:
+                tlist = ytt.list(v["video_id"])
+                for tr in tlist:
+                    log.info(f"     … available: {tr.language} ({tr.language_code}) auto={tr.is_generated}")
+                    try:
+                        t = tr.fetch()
+                        txt = " ".join(s.text for s in t.snippets)
+                        break
+                    except:
+                        continue
+            except Exception as e:
+                log.info(f"     ✗ list failed: {type(e).__name__}: {str(e)[:80]}")
         if not txt:
             log.info(f"     ✗ нет субтитров"); continue
         w = len(txt.split())
@@ -172,7 +187,7 @@ def transcripts(videos: list[dict]) -> list[dict]:
             log.info(f"     ✗ {w} слов (мало)"); continue
         out.append({**v, "transcript": txt, "words": w})
         log.info(f"     ✓ {w} слов")
-        time.sleep(0.2)
+        time.sleep(0.3)
     log.info(f"  Итого транскриптов: {len(out)}")
     return out
 
